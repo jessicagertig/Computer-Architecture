@@ -5,6 +5,7 @@ import sys
 LDI = 0b10000010
 PRN = 0b01000111
 HLT = 0b00000001
+MUL = 0b10100010
 
 class CPU:
     """Main CPU class."""
@@ -18,7 +19,8 @@ class CPU:
         self.branchtable = {
             LDI: self.ldi,
             PRN: self.prn,
-            HLT: self.hlt
+            HLT: self.hlt,
+            MUL: self.mul
         }        
 
 
@@ -29,6 +31,7 @@ class CPU:
 
         ##opening a file or program and reading line by line
         ##need to account for sys.argv[1] being left blank
+        
         if len(sys.argv) < 2:
             print('No program specified to be run.')
             sys.exit()
@@ -41,11 +44,10 @@ class CPU:
                     if string_val == '':
                         continue
                     v = int(string_val, 2)
+                    ##set that line of program to current address in ram:
                     self.ram[address] = v
-                    ##move to next line in program
+                    ##move to next line in program:
                     address += 1
-
-
 
     def alu(self, op, reg_a, reg_b):
         """ALU operations."""
@@ -80,28 +82,16 @@ class CPU:
         """Run the CPU."""
         running = True
 
-        operand_a = self.ram_read(self.pc + 1)
-        operand_b = self.ram_read(self.pc + 2)
         
         while running:
+            operand_a = self.ram_read(self.pc + 1)
+            operand_b = self.ram_read(self.pc + 2)
             ##read the mar and store that in the IR
             ir = self.ram_read(self.pc)
             
             if ir in self.branchtable:
+                ##if function in branchtable, call function and pass in parameters
                 self.branchtable[ir](operand_a, operand_b)
-            # if ir == LDI:
-            #     operand_a = self.ram_read(self.pc + 1)
-            #     operand_b = self.ram_read(self.pc + 2)
-            #     self.reg[operand_a] = operand_b
-            #     self.pc += 3
-            # elif ir == PRN:
-            #     operand_a = self.ram_read(self.pc + 1)
-            #     value = self.reg[operand_a]
-            #     print(value)
-            #     self.pc += 2
-            # elif ir == HLT:
-            #     running = False
-            #     sys.exit()
             else:
                 print('unknown instruction')
                 
@@ -127,3 +117,10 @@ class CPU:
     def hlt(self, operand_a, operand_b):
         running = False
         sys.exit()
+
+    def mul(self, operand_a, operand_b):
+        mult1 = self.reg[operand_a]
+        mult2 = self.reg[operand_b]
+        result = mult1 * mult2
+        self.reg[operand_a] = result
+        self.pc +=3
