@@ -14,7 +14,13 @@ class CPU:
         self.reg = [0] * 8
         self.ram = [0] * 256
         self.pc = 0 # program counter, the address of the current instruction
-        self.sp = 0xF4 # stack pointer aka R7 of registe
+        self.sp = 0xF4 # stack pointer aka R7 of registef\r
+        self.branchtable = {
+            LDI: self.ldi,
+            PRN: self.prn,
+            HLT: self.hlt
+        }        
+
 
     def load(self):
         """Load a program into memory."""
@@ -71,23 +77,28 @@ class CPU:
         """Run the CPU."""
         running = True
 
+        operand_a = self.ram_read(self.pc + 1)
+        operand_b = self.ram_read(self.pc + 2)
+        
         while running:
             ##read the mar and store that in the IR
             ir = self.ram_read(self.pc)
             
-            if ir == LDI:
-                operand_a = self.ram_read(self.pc + 1)
-                operand_b = self.ram_read(self.pc + 2)
-                self.reg[operand_a] = operand_b
-                self.pc += 3
-            elif ir == PRN:
-                operand_a = self.ram_read(self.pc + 1)
-                value = self.reg[operand_a]
-                print(value)
-                self.pc += 2
-            elif ir == HLT:
-                running = False
-                sys.exit()
+            if ir in self.branchtable:
+                self.branchtable[ir](operand_a, operand_b)
+            # if ir == LDI:
+            #     operand_a = self.ram_read(self.pc + 1)
+            #     operand_b = self.ram_read(self.pc + 2)
+            #     self.reg[operand_a] = operand_b
+            #     self.pc += 3
+            # elif ir == PRN:
+            #     operand_a = self.ram_read(self.pc + 1)
+            #     value = self.reg[operand_a]
+            #     print(value)
+            #     self.pc += 2
+            # elif ir == HLT:
+            #     running = False
+            #     sys.exit()
             else:
                 print('unknown instruction')
                 
@@ -100,3 +111,16 @@ class CPU:
     def ram_write(self, mar, mdr):
         """takes data given to write -MRD- and writes it in address given -MAR-."""
         self.ram[mar] = mdr
+
+    def ldi(self, operand_a, operand_b):
+        self.reg[operand_a] = operand_b
+        self.pc += 3
+
+    def prn(self, operand_a, operand_b):
+        value = self.reg[operand_a]
+        print(value)
+        self.pc += 2
+
+    def hlt(self, operand_a, operand_b):
+        running = False
+        sys.exit()
