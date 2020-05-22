@@ -8,6 +8,8 @@ HLT = 0b00000001
 MUL = 0b10100010
 PUSH = 0b01000101
 POP = 0b01000110
+CMP = 0b10100111
+ADD = 0b10100000
 
 class CPU:
     """Main CPU class."""
@@ -20,7 +22,7 @@ class CPU:
         self.sp = 7 # stack pointer aka R7 of register
         self.reg[self.sp] = 0xf4
         self.flag = 6
-        self.reg[self.flag] = 0xf5
+        self.reg[self.flag] = 0b00000000
         self.branchtable = {
             LDI: self.ldi,
             PRN: self.prn,
@@ -36,18 +38,18 @@ class CPU:
         address = 0
 
         program = [
-            0b10000010, # LDI R0,8
+            0b10000010, # LDI R0,10
             0b00000000,
-            0b00001000,
-            0b10000010, # LDI R1,9
+            0b00001010,
+            0b10000010, # LDI R1,20
             0b00000001,
-            0b00001001,
-            0b10100010, # MUL R0,R1
+            0b00010100,
+            0b10000010, # LDI R2,TEST1
+            0b00000010,
+            0b00010011,
+            0b10100111, # CMP R0,R1
             0b00000000,
-            0b00000001,
-            0b01000111, # PRN R0
-            0b00000000,
-            0b00000001 # HLT
+            0b00000001
         ]
 
         for instruction in program:
@@ -77,7 +79,7 @@ class CPU:
     def alu(self, op, reg_a, reg_b):
         """ALU operations."""
 
-        if op == "ADD":
+        if op == ADD:
             self.reg[reg_a] += self.reg[reg_b]
         elif op == MUL:
             mult1 = self.reg[reg_a]
@@ -85,6 +87,17 @@ class CPU:
             result = mult1 * mult2
             self.reg[reg_a] = result
             self.pc +=3
+        elif op == CMP:
+            num1 = self.reg[reg_a]
+            num2 = self.reg[reg_b]
+            if num1 == num2:
+                self.reg[self.flag] = 0b00000001
+            elif num1 < num2: 
+                self.reg[self.flag] = 0b00000100
+            elif num1 > num2:
+                self.reg[self.flag] = 0b00000010
+            else:
+                self.reg[self.flag] = 0b00000000
         else:
             raise Exception("Unsupported ALU operation")
 
@@ -151,13 +164,6 @@ class CPU:
     def hlt(self, operand_a, operand_b):
         running = False
         sys.exit()
-
-    # def mul(self, operand_a, operand_b):
-    #     mult1 = self.reg[operand_a]
-    #     mult2 = self.reg[operand_b]
-    #     result = mult1 * mult2
-    #     self.reg[operand_a] = result
-    #     self.pc +=3
 
     def push(self, operand_a, operand_b):
         ##decrement stackpointer
