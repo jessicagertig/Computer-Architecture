@@ -10,6 +10,9 @@ PUSH = 0b01000101
 POP = 0b01000110
 CMP = 0b10100111
 ADD = 0b10100000
+JMP = 0b01010100
+JEQ = 0b01010101
+JNE = 0b01010110
 
 class CPU:
     """Main CPU class."""
@@ -28,7 +31,10 @@ class CPU:
             PRN: self.prn,
             HLT: self.hlt,
             PUSH: self.push,
-            POP: self.pop
+            POP: self.pop,
+            JMP: self.jmp,
+            JEQ: self.jeq,
+            JNE: self.jne
         }        
 
 
@@ -37,44 +43,107 @@ class CPU:
 
         address = 0
 
-        program = [
-            0b10000010, # LDI R0,10
-            0b00000000,
-            0b00001010,
-            0b10000010, # LDI R1,20
-            0b00000001,
-            0b00010100,
-            0b10000010, # LDI R2,TEST1
-            0b00000010,
-            0b00010011,
-            0b10100111, # CMP R0,R1
-            0b00000000,
-            0b00000001
-        ]
+"""TEST CODE"""
+        # program = [
+        #     0b10000010, # LDI R0,10
+        #     0b00000000,
+        #     0b00001010,
+        #     0b10000010, # LDI R1,20
+        #     0b00000001,
+        #     0b00010100,
+        #     0b10000010, # LDI R2,TEST1
+        #     0b00000010,
+        #     0b00010011,
+        #     0b10100111, # CMP R0,R1
+        #     0b00000000,
+        #     0b00000001,
+        #     0b01010101, # JEQ R2
+        #     0b00000010,
+        #     0b10000010, # LDI R3,1
+        #     0b00000011,
+        #     0b00000001,
+        #     0b01000111, # PRN R3
+        #     0b00000011,
+        #     0b10000010, # LDI R2,TEST2 # # TEST1 (address 19):
+        #     0b00000010,
+        #     0b00100000,
+        #     0b10100111, # CMP R0,R1
+        #     0b00000000,
+        #     0b00000001,
+        #     0b01010110, # JNE R2
+        #     0b00000010,
+        #     0b10000010, # LDI R3,2
+        #     0b00000011,
+        #     0b00000010,
+        #     0b01000111, # PRN R3
+        #     0b00000011,
+        #     0b10000010, # LDI R1,10 # TEST2 (address 32):
+        #     0b00000001,
+        #     0b00001010,
+        #     0b10000010, # LDI R2,TEST3
+        #     0b00000010,
+        #     0b00110000,
+        #     0b10100111, # CMP R0,R1
+        #     0b00000000,
+        #     0b00000001,
+        #     0b01010101, # JEQ R2
+        #     0b00000010,
+        #     0b10000010, # LDI R3,3
+        #     0b00000011,
+        #     0b00000011,
+        #     0b01000111, # PRN R3
+        #     0b00000011,
+        #     0b10000010, # LDI R2,TEST4 ## TEST3 (address 48):
+        #     0b00000010,
+        #     0b00111101,
+        #     0b10100111, # CMP R0,R1
+        #     0b00000000,
+        #     0b00000001,
+        #     0b01010110, # JNE R2
+        #     0b00000010,
+        #     0b10000010, # LDI R3,4
+        #     0b00000011,
+        #     0b00000100,
+        #     0b01000111, # PRN R3
+        #     0b00000011,
+        #     0b10000010, # LDI R3,5 # TEST4 (address 61):
+        #     0b00000011,
+        #     0b00000101,
+        #     0b01000111, # PRN R3
+        #     0b00000011,
+        #     0b10000010, # LDI R2,TEST5
+        #     0b00000010,
+        #     0b01001001,
+        #     0b01010100, # JMP R2
+        #     0b00000010,
+        #     0b01000111, # PRN R3
+        #     0b00000011,
+        #     0b00000001, # HLT # TEST5 (address 73):
+        # ]
 
-        for instruction in program:
-            self.ram[address] = instruction
-            address += 1
+        # for instruction in program:
+        #     self.ram[address] = instruction
+        #     address += 1
 
         ##opening a file or program and reading line by line
         ##need to account for sys.argv[1] being left blank
         
-        # if len(sys.argv) < 2:
-        #     print('No program specified to be run.')
-        #     sys.exit()
-        # else: 
-        #     with open(sys.argv[1]) as f:
-        #         ##read program file line by line
-        #         for line in f:
-        #             ##convert to single lines of non-string binary numbers
-        #             string_val = line.split("#")[0].strip()
-        #             if string_val == '':
-        #                 continue
-        #             v = int(string_val, 2)
-        #             ##set that line of program to current address in ram:
-        #             self.ram[address] = v
-        #             ##move to next line in program:
-        #             address += 1
+        if len(sys.argv) < 2:
+            print('No program specified to be run.')
+            sys.exit()
+        else: 
+            with open(sys.argv[1]) as f:
+                ##read program file line by line
+                for line in f:
+                    ##convert to single lines of non-string binary numbers
+                    string_val = line.split("#")[0].strip()
+                    if string_val == '':
+                        continue
+                    v = int(string_val, 2)
+                    ##set that line of program to current address in ram:
+                    self.ram[address] = v
+                    ##move to next line in program:
+                    address += 1
 
     def alu(self, op, reg_a, reg_b):
         """ALU operations."""
@@ -98,6 +167,7 @@ class CPU:
                 self.reg[self.flag] = 0b00000010
             else:
                 self.reg[self.flag] = 0b00000000
+            self.pc +=3
         else:
             raise Exception("Unsupported ALU operation")
 
@@ -187,3 +257,21 @@ class CPU:
         self.reg[self.sp] += 1
         
         self.pc +=2
+
+    def jmp(self, operand_a, operand_b):
+        address = self.reg[operand_a]
+        self.pc = address
+
+    def jeq(self, operand_a, operand_b):
+        ##if flag is set to equal jump to address stored at given register
+        if self.reg[self.flag] == 0b00000001:
+            self.jmp(operand_a, operand_b)
+        else:
+            self.pc +=2
+    
+    def jne(self, operand_a, operand_b):
+        ##if e flag is false, 0, jump to address sorted in given register
+        if self.reg[self.flag] != 0b00000001:
+            self.jmp(operand_a, operand_b)
+        else:
+            self.pc +=2
